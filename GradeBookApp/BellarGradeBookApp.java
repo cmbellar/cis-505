@@ -5,11 +5,8 @@
 */
 
 /** imports */
-import java.io.File; // Import the File class.
-import java.io.FileOutputStream; // Import the FileOutputStream class.
 import java.io.IOException; // Import the IOException class.
-import java.io.PrintWriter; // Import the PrintWriter class.
-import java.util.Scanner; // Import the Scanner class.
+import java.util.ArrayList; // Import the ArrayList class.
 
 import javafx.application.Application; // Import the Application class.
 import javafx.collections.FXCollections; // Import the FXCollections class.
@@ -53,12 +50,6 @@ public class BellarGradeBookApp extends Application {
      */
     private ComboBox<String> cbGrades = new ComboBox<String>();
     ObservableList<String> cbList = FXCollections.observableArrayList("A", "B", "C", "D", "F");
-
-    /**
-     * Set the csv filename for IO operations.
-     */
-    private final static String FILE_NAME = "./GradeBookApp/grades.csv"; // Set the file name for grades.
-    private static File file = new File(FILE_NAME); // Initialize file using FILE_NAME.
 
     /**
      * Public void method with one argument which is used to generate a GUI stage to display.
@@ -142,20 +133,16 @@ public class BellarGradeBookApp extends Application {
      * @throws IOException
      * @return none. 
      */
-    private void viewGrades()
+    private void viewGrades() 
         throws IOException {
-        
-        Scanner input = new Scanner(file); // Instantiate a new scanner.
-        txtResults.setText("  Student Grades: \n\n"); // Set header in txtResults.
-        
-        /** Loop through file, create Student objects from stream, and add them to txtResults. */
-        while (input.hasNext()) {
-            String[] studentsArray = input.next().split(","); // Split input on comma and store results in a String array.
-            Student student = new Student(studentsArray[0], studentsArray[1], studentsArray[2], studentsArray[3]); // Create new Student from parsed file.
-            txtResults.appendText(student.toString() + "\n\n"); // Append student to txtResults.
-        } // end while
 
-        input.close(); // Close scanner to prevent memory leaks.
+        txtResults.setText("  Student Grades: \n\n"); // Set header in txtResults.
+        ArrayList<Student> students = StudentIO.findAll(); // Get a list of students from grades.csv.
+        
+        /** Loop through Student objects and add them to txtResults. */
+        for (Student student : students) {
+            txtResults.appendText(student.toString() + "\n\n"); // Append student to txtResults.
+        } // end for
     } // end viewGrades
 
     /**
@@ -167,24 +154,12 @@ public class BellarGradeBookApp extends Application {
         throws IOException {
         
          //** If statement to determine if all fields have values and process it only if all fields do. */
-        if (txtFirstName.getText().isEmpty() || txtLastName.getText().isEmpty() || txtCourse.getText().isEmpty() || cbGrades.getValue() == null) {
+        if (txtFirstName.getText().isEmpty() || txtLastName.getText().isEmpty() || txtCourse.getText().isEmpty() || cbGrades.getSelectionModel().isEmpty()) {
             txtResults.setText("  ERROR: One or more fields do not contain a value. Please add missing values and retry."); // Notify user of error.
         } else {
-        
-            PrintWriter output = null; // Initialize PrintWriter for insert.
             Student student = new Student(txtFirstName.getText(), txtLastName.getText(), txtCourse.getText() , cbGrades.getValue()); // Create Student object with user provided values.
-
-            //** If statement to determine if file exists and create it if it doesn't. */
-            if (file.exists()) {
-                output = new PrintWriter(new FileOutputStream(new File(FILE_NAME), true)); // File exists, so append content to it.
-            } else {
-                output = new PrintWriter(FILE_NAME); // File does not exist, so create it.
-            } // end if
-
-            output.println(student.getFirstName() + "," + student.getLastName() + "," + student.getCourse() + "," + student.getGrade()); // Write values to grades.csv file.
+            StudentIO.insertStudent(student); // Call insertStudent from StudentIO to insert student.
             txtResults.setText("  --Details--\n" + student.toString() + "\n\n  Save Successful!"); // Display details to user so they know insert was successful.
-
-            output.close(); // Close PrintWriter to prevent leaks.
         } // end if
     } // end saveStudent
 
